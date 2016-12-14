@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="">
+
+    <title>Call Access Open Data</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="dist/css/bootstrap.css" rel="stylesheet">
+
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <link href="assets/css/ie10-viewport-bug-workaround.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="justified-nav.css" rel="stylesheet">
+
+    <!-- Just for debugging purposes. Don't actually copy these 2 lines! -->
+    <!--[if lt IE 9]><script src="assets/js/ie8-responsive-file-warning.js"></script><![endif]-->
+    <script src="assets/js/ie-emulation-modes-warning.js"></script>
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+  </head>
+
+  <body>
+    <div class="container">
+      <!-- The justified navigation menu is meant for single line per list item.
+           Multiple lines will require custom code not provided by Bootstrap. -->
+      <div class="masthead">
+        <h3 class="text-muted">Cal Access Lobbying Open Data</h3>
+        <nav>
+          <ul class="nav nav-justified">
+            <li class="active"><a href="#">Search</a></li>
+            <li><a href="http://buildingsopendata.org/organization" target=blank>Data Portal</a></li>
+            <li><a href="mailto:moqri@ufl.edut?Subject=Buildings Open Data - Alachua">Contact</a></li>
+            <li><a href="#">About</a></li>
+          </ul>
+        </nav>
+      </div>
+      <br>
+      <h3 >Lobbyin Search</h3>
+
+      <!-- Jumbotron -->
+      <div class="jumbotron">
+        <h1>Find Lobbying Reports</h1>
+        <div class="lead">
+          <form action="index.html">
+            <br>
+            <input class="form-control input-lg" name="q" placeholder="Search for address, owner name, or parcel ID">
+            <h3></h3>
+            <input class="btn btn-lg btn-success" type="submit" value="Find Reports">
+          </form>        
+        </div>
+        <br></br>
+        <table class="table" style="text-align:left" id="t1"></table>
+      </div>
+
+      <!-- Example row of columns 
+      <div class="row">
+        <div class="col-lg-4">
+          <h2>Heading</h2>
+          <p>stuff </p>
+          <p><a class="btn btn-primary" href="#" role="button">View details &raquo;</a></p>
+        </div>
+        <div class="col-lg-4">
+          <h2>Heading</h2>
+          <p>stuff</p>
+          <p><a class="btn btn-primary" href="#" role="button">View details &raquo;</a></p>
+       </div>
+        <div class="col-lg-4">
+          <h2>Heading</h2>
+          <p>stuff</p>
+          <p><a class="btn btn-primary" href="#" role="button">View details &raquo;</a></p>
+        </div>
+      </div>
+      -->
+      <!-- Site footer -->
+      <footer class="footer">
+        <p>&copy; 2016 BuildingsOpenData.org, Inc.</p>
+      </footer>
+
+    </div> <!-- /container -->
+
+    <script>
+    function formatDollar(num) {
+    var p = num.toFixed(2).split(".");
+    return "$" + p[0].split("").reverse().reduce(function(acc, num, i, orig) {
+        return  num=="-" ? acc : num + (i && !(i % 3) ? "," : "") + acc;
+    }, "") + "." + p[1];
+    }
+
+    function parse(val) {
+        var result ,
+            tmp = [];
+        location.search
+        //.replace ( "?", "" ) 
+        // this is better, there might be a question mark inside
+        .substr(1)
+            .split("&")
+            .forEach(function (item) {
+            tmp = item.split("=");
+            if (tmp[0] === val) result = decodeURIComponent(tmp[1]);
+        });
+        return result;
+    }
+    var q = parse('q');
+    var parcel_id = parse('parcel_id')
+    var physical_address = parse('physical_address')
+    var owner_name = parse('owner_name')
+    console.log(q)
+
+    $.ajaxSetup({ cache: true });
+    var url = "https://datahub.io/api/action/datastore_search?resource_id="
+	var resource_id="117b2e40-5361-49ac-819f-01e12a371632"
+    if (q) {
+        //url+=resource_id+"&sort=FILING_ID desc&q="+q+"&callback=?"
+        url+=resource_id+"&sort=report_date desc,FILING_ID&limit=200&callback=?"
+    }else{
+        if (parcel_id){
+        url+=resource_id+"&q={\"PARCEL_ID\":\""+parcel_id+"\"}&callback=?"
+        }
+        if (physical_address){
+        url+=resource_id+"&q={\"PHY_ADDR1\":\""+physical_address+"\"}&callback=?"  
+        }    
+        if (owner_name){
+        url+=resource_id+"&q={\"OWN_NAME\":\""+owner_name+"\"}&callback=?"  
+        }
+    console.log(url)
+    }
+    $.getJSON(url,
+    function(json){
+      console.log(json);
+      var data = JSON.stringify(json)
+      var obj = $.parseJSON(data);
+      //alert(obj['result']['records'][1]['PHY_ADDR1']);
+        var tbl_body = "";
+        var odd_even = false;
+        //header - not the best way to write it
+        var tbl_head ="";
+        tbl_head += "<th > Filing ID </th>";
+        tbl_head += "<th > Report Date </th>";
+        tbl_head += "<th > Filer </th>";
+        tbl_head += "<th > Filing Amount </th>";
+        tbl_head += "<th > Report </th>";
+        tbl_body += "<tr>"+tbl_head+"</tr>";
+
+        $.each(obj['result']['records'], function(index, value) {
+            var tbl_row = "";
+            var filing_id=value['FILING_ID'];
+            var report_date=value['report_date'].slice(0,10);
+            var filer_name=value['FILER_NAML'];
+            if (value['FEES_AMT'])
+              var amount=formatDollar(parseFloat(value['FEES_AMT']))//.slice(0, -2);
+            else
+              var amount=""
+  
+
+
+            tbl_row += "<td><a href=\"index.html?filing_id="+filing_id+"\"</a>"+filing_id+"</td>";
+            tbl_row +="<td><a href=\"index.html?date="+report_date+"\"</a>"+report_date+"</td>";
+            tbl_row +="<td><a href=\"index.html?filer_name="+filer_name+"\"</a>"+filer_name+"</td>";
+            tbl_row +="<td>"+amount+"</td>";
+            tbl_row += "<td>\
+              <a href=\"http://cal-access.ss.ca.gov/PDFGen/pdfgen.prg?filingid="
+              +filing_id+"\" target=\"_blank\" > \
+                <img src=\"detail.ico\" width=\"30\" height=\"30\">\
+              </a>\
+              </td>";
+            tbl_body += "<tr class=\""+( odd_even ? "odd" : "even")+"\">"+tbl_row+"</tr>";
+        })
+        $("#t1").html(tbl_body);
+    });
+
+    </script>
+
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="assets/js/ie10-viewport-bug-workaround.js"></script>
+  </body>
+</html>
