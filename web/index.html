@@ -139,11 +139,9 @@
 	  var resource_id="117b2e40-5361-49ac-819f-01e12a371632"
 
     if (begin) {
-        //url+=resource_id+"&sort=FILING_ID desc&q="+q+"&callback=?"
-        url+=resource_id+"\""
-        url+= " WHERE \"FILING_DATE\" between \'" + begin + "\' AND \'" + end +"\'"
-        url+=" ORDER BY \"FILING_DATE\" DESC , \"AMOUNT_A\" DESC"
-        //+"&sort=FILING_DATE desc,FILER_NAML, AMOUNT_A desc&limit=200&callback=?"
+        document.getElementById("from_date").value = begin
+        document.getElementById("to_date").value = end
+
     }else{
         var today=new Date()
         var last_week=new Date()
@@ -153,9 +151,6 @@
         document.getElementById("to_date").valueAsDate = today
         begin=document.getElementById("from_date").value
         end=document.getElementById("to_date").value
-        url+=resource_id+"\""
-        url+= " WHERE \"FILING_DATE\" between \'" + begin + "\' AND \'" + end +"\'"
-        url+=" ORDER BY \"FILING_DATE\" DESC , \"AMOUNT_A\" DESC"
         /*
         if (parcel_id){
         url+=resource_id+"&q={\"PARCEL_ID\":\""+parcel_id+"\"}&callback=?"
@@ -167,8 +162,11 @@
         url+=resource_id+"&q={\"OWN_NAME\":\""+owner_name+"\"}&callback=?"  
         }
         */
-    console.log(url)
     }
+    url+=resource_id+"\""
+    url+= " WHERE \"FILING_DATE\" between \'" + begin + "\' AND \'" + end +"\'"
+    url+=" ORDER BY \"FILING_DATE\" DESC , \"AMOUNT_A\" DESC"
+
     $.getJSON(url,
     function(json){
       console.log(json);
