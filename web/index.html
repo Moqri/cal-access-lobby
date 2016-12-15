@@ -73,6 +73,7 @@
 
 
         <br></br>
+        <p id="p1"> Collecting reports, please wait ....</p>
         <table id="t1" class="table table-striped table-bordered" cellspacing="0" width="100%"></table>
 
       <!-- Example row of columns 
@@ -96,7 +97,8 @@
       -->
       <!-- Site footer -->
       <footer class="footer">
-        <p>&copy; 2016 BuildingsOpenData.org, Inc.</p>
+        <!--<p>&copy; 2016 BuildingsOpenData.org, Inc.</p>
+        !-->
       </footer>
 
     </div> <!-- /container -->
@@ -210,6 +212,7 @@
         $("#t1").html(tbl_body);
 
         $(document).ready(function() {
+            document.getElementById("p1").innerHTML=""
             $('#t1').DataTable({
               "order": [[ 1, 'des' ],[3,'des']]
             });
