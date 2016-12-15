@@ -13,6 +13,8 @@
 
     <!-- Bootstrap core CSS -->
     <link href="dist/css/bootstrap.css" rel="stylesheet">
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.datatables.net/1.10.13/css/dataTables.bootstrap.min.css" rel="stylesheet">
 
     <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
     <link href="assets/css/ie10-viewport-bug-workaround.css" rel="stylesheet">
@@ -30,6 +32,9 @@
       <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
     <![endif]-->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+    <script src="https://cdn.datatables.net/1.10.13/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.13/js/dataTables.bootstrap.min.js"></script>
   </head>
 
   <body>
@@ -38,6 +43,7 @@
            Multiple lines will require custom code not provided by Bootstrap. -->
       <div class="masthead">
         <h3 class="text-muted">Cal Access Lobbying Open Data</h3>
+        <!--
         <nav>
           <ul class="nav nav-justified">
             <li class="active"><a href="#">Search</a></li>
@@ -46,11 +52,14 @@
             <li><a href="#">About</a></li>
           </ul>
         </nav>
+        !-->
+
       </div>
       <br>
+
+      <!-- Jumbotron 
       <h3 >Lobbyin Search</h3>
 
-      <!-- Jumbotron -->
       <div class="jumbotron">
         <h1>Find Lobbying Reports</h1>
         <div class="lead">
@@ -59,11 +68,12 @@
             <input class="form-control input-lg" name="q" placeholder="Search for address, owner name, or parcel ID">
             <h3></h3>
             <input class="btn btn-lg btn-success" type="submit" value="Find Reports">
-          </form>        
+          </form>  
         </div>
-        <br></br>
-        <table class="table" style="text-align:left" id="t1"></table>
       </div>
+      !-->
+        <br></br>
+        <table id="t1" class="table table-striped table-bordered" cellspacing="0" width="100%"></table>
 
       <!-- Example row of columns 
       <div class="row">
@@ -120,11 +130,16 @@
     console.log(q)
 
     $.ajaxSetup({ cache: true });
-    var url = "https://datahub.io/api/action/datastore_search?resource_id="
-	var resource_id="117b2e40-5361-49ac-819f-01e12a371632"
+    var url = "https://datahub.io/api/action/datastore_search_sql?sql=SELECT * FROM\""
+	  var resource_id="117b2e40-5361-49ac-819f-01e12a371632"
+    var begin= "2016-12-08"
+    var end="2016-12-13"
     if (q) {
         //url+=resource_id+"&sort=FILING_ID desc&q="+q+"&callback=?"
-        url+=resource_id+"&sort=report_date desc,FILING_ID&limit=200&callback=?"
+        url+=resource_id+"\""
+        url+= " WHERE \"FILING_DATE\" between \'" + begin + "\' AND \'" + end +"\'"
+        url+=" ORDER BY \"FILING_DATE\" DESC , \"AMOUNT_A\" DESC"
+        //+"&sort=FILING_DATE desc,FILER_NAML, AMOUNT_A desc&limit=200&callback=?"
     }else{
         if (parcel_id){
         url+=resource_id+"&q={\"PARCEL_ID\":\""+parcel_id+"\"}&callback=?"
@@ -148,37 +163,43 @@
         //header - not the best way to write it
         var tbl_head ="";
         tbl_head += "<th > Filing ID </th>";
-        tbl_head += "<th > Report Date </th>";
+        tbl_head += "<th > Filing Date </th>";
         tbl_head += "<th > Filer </th>";
-        tbl_head += "<th > Filing Amount </th>";
+        tbl_head += "<th > Period Total </th>";
         tbl_head += "<th > Report </th>";
-        tbl_body += "<tr>"+tbl_head+"</tr>";
+        tbl_body += "<thead><tr>"+tbl_head+"</tr></thead>";
+        tbl_body += "<tbody>"
+          $.each(obj['result']['records'], function(index, value) {
+              var tbl_row = "";
+              var filing_id=value['FILING_ID'];
+              var amend_id=value['AMEND_ID'];
+              var filing_date=value['FILING_DATE'].slice(0,10);
+              var filer_name=value['FILER_NAML'];
+              if (value['AMOUNT_A'])
+                var period_amount=formatDollar(parseFloat(value['AMOUNT_A']))
+              else
+                var period_amount=""
 
-        $.each(obj['result']['records'], function(index, value) {
-            var tbl_row = "";
-            var filing_id=value['FILING_ID'];
-            var report_date=value['report_date'].slice(0,10);
-            var filer_name=value['FILER_NAML'];
-            if (value['FEES_AMT'])
-              var amount=formatDollar(parseFloat(value['FEES_AMT']))//.slice(0, -2);
-            else
-              var amount=""
-  
-
-
-            tbl_row += "<td><a href=\"index.html?filing_id="+filing_id+"\"</a>"+filing_id+"</td>";
-            tbl_row +="<td><a href=\"index.html?date="+report_date+"\"</a>"+report_date+"</td>";
-            tbl_row +="<td><a href=\"index.html?filer_name="+filer_name+"\"</a>"+filer_name+"</td>";
-            tbl_row +="<td>"+amount+"</td>";
-            tbl_row += "<td>\
-              <a href=\"http://cal-access.ss.ca.gov/PDFGen/pdfgen.prg?filingid="
-              +filing_id+"\" target=\"_blank\" > \
-                <img src=\"detail.ico\" width=\"30\" height=\"30\">\
-              </a>\
-              </td>";
-            tbl_body += "<tr class=\""+( odd_even ? "odd" : "even")+"\">"+tbl_row+"</tr>";
-        })
+              tbl_row +="<td><a href=\"index.html?filing_id="+filing_id+"\"</a>"+filing_id+"</td>";
+              tbl_row +="<td><a href=\"index.html?date="+filing_date+"\"</a>"+filing_date+"</td>";
+              tbl_row +="<td><a href=\"index.html?filer_name="+filer_name+"\"</a>"+filer_name+"</td>";
+              //tbl_row +="<td><a href=\"index.html?filer_name="+employer_name+"\"</a>"+employer_name+"</td>";
+              tbl_row +="<td>"+period_amount+"</td>";
+              tbl_row += "<td>\
+                <a href=\"http://cal-access.ss.ca.gov/PDFGen/pdfgen.prg?filingid="
+                +filing_id+"&amendid="+amend_id
+                +"\" target=\"_blank\" > <img src=\"detail.ico\" width=\"30\" height=\"30\"></a></td>";
+              tbl_body += "<tr>"+tbl_row+"</tr>"//class=\""+( odd_even ? "odd" : "even")+"\"
+          })
+        tbl_body += "</tbody>"
         $("#t1").html(tbl_body);
+
+        $(document).ready(function() {
+            $('#t1').DataTable({
+              "order": [[ 1, 'des' ],[3,'des']]
+            });
+        } );
+
     });
 
     </script>
