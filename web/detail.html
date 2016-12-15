@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="">
+
+    <title>Alachua County Parcel Search</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="dist/css/bootstrap.css" rel="stylesheet">
+
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <link href="assets/css/ie10-viewport-bug-workaround.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="justified-nav.css" rel="stylesheet">
+
+    <!-- Just for debugging purposes. Don't actually copy these 2 lines! -->
+    <!--[if lt IE 9]><script src="assets/js/ie8-responsive-file-warning.js"></script><![endif]-->
+    <script src="assets/js/ie-emulation-modes-warning.js"></script>
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+  </head>
+
+  <body>
+    <div class="container">
+      <!-- The justified navigation menu is meant for single line per list item.
+           Multiple lines will require custom code not provided by Bootstrap. -->
+      <div class="masthead">
+        <h3 class="text-muted">Buildings Open Data</h3>
+        <nav>
+          <ul class="nav nav-justified">
+            <li class="active"><a href="index.html">Search</a></li>
+            <li><a href="http://buildingsopendata.org/organization" target=blank>Data Portal</a></li>
+            <li><a href="mailto:moqri@ufl.edut?Subject=Buildings Open Data - Alachua">Contact</a></li>
+            <li><a href="#">About</a></li>
+          </ul>
+        </nav>
+      </div>
+      <br>
+      <h3 >Alachua County Building Detail</h3>
+
+      <div class="jumbotron">
+        <p class="p" id="p1"></p>
+
+        <!--map-->
+        <p> this map is not connected to the address yet</p>
+        <div style="height: 500px; width:1000px"; border=1px solid black> 
+          <div id="map" style="float: left; height: 100%;width: 45%"></div>
+          <div id="pano" style="float: left; height: 100%;width: 45%"></div>
+        </div>   
+
+      </div>
+   
+
+      <footer class="footer">
+        <p>&copy; 2016 BuildingsOpenData.org, Inc.</p>
+      </footer>
+
+    </div> <!-- /container -->
+
+    <script>
+    function parse(val) {
+        var result ,
+            tmp = [];
+        location.search
+        //.replace ( "?", "" ) 
+        // this is better, there might be a question mark inside
+        .substr(1)
+            .split("&")
+            .forEach(function (item) {
+            tmp = item.split("=");
+            if (tmp[0] === val) result = decodeURIComponent(tmp[1]);
+        });
+        return result;
+    }
+    var parcel_id = parse('parcel_id')
+    console.log(parcel_id)
+    $.ajaxSetup({ cache: true });
+    var url = "https://datahub.io/api/action/datastore_search?resource_id="
+	var resource_id="2c5bbdd0-9b53-4291-aa6a-b3f17a835240"
+	
+    if (parcel_id){
+    url+=resource_id+"&q={\"PARCEL_ID\":\""+parcel_id+"\"}&callback=?"
+    }
+    console.log(url)
+    $.getJSON(url,
+    function(json){
+      console.log(json);
+      var data = JSON.stringify(json)
+      var obj = $.parseJSON(data);
+      var value=obj['result']['records'][0];
+      var parcel_id=value['PARCEL_ID'];
+      var physical_address=value['PHY_ADDR1'];
+      var physical_address2=value['PHY_ADDR2'];
+      var owner_name=value['OWN_NAME'];    
+      var owner_address=value['OWN_ADDR1'];    
+      var owner_city=value['OWN_CITY'];
+      var owner_state=value['OWN_STATE'];    
+      var owner_zip=value['OWN_ZIPCD']||'';   
+      var year_built=value['ACT_YR_BLT']||'';   
+      var just_value=value['JV']||'';   
+      var land_square=value['LND_SQFOOT']||'';   
+      var land_value=value['LND_VAL']||'';   
+
+
+      console.log(owner_zip)
+      $("#p1").html(parcel_id+"<br>"
+        +physical_address+"<br>"
+        +physical_address2+"<br>"
+        +owner_name+"<br>"
+        +owner_address+"<br>"
+        +owner_city+"<br>"
+        +owner_state+"<br>"
+        +owner_zip+"<br><br><b>Year Buit:  "
+        +year_built+"<br>Assesed Value:  "
+        +just_value+"<br>Land Square:  "
+        +land_square+"<br>Land Value:  "
+        +land_value+"<br><br>and much more to be added soon!"
+
+        );
+    });
+
+    //google map
+    function initialize() {
+      var geocoder = new google.maps.Geocoder();
+      var address = "1515 SE 15TH AVE, GAINESVILLE, FL 32641";
+      var latitude =0;
+      var longitude =0;
+      var fenway;
+      geocoder.geocode( { 'address': address}, function(results, status) {
+        if (status == google.maps.GeocoderStatus.OK) {
+            latitude = results[0].geometry.location.lat();
+            longitude = results[0].geometry.location.lng();
+            console.log(latitude+longitude);
+            fenway = {lat: latitude, lng: longitude};
+              var map = new google.maps.Map(document.getElementById('map'), {
+                center: fenway,
+                zoom: 14
+              });
+
+              var panorama = new google.maps.StreetViewPanorama(
+                  document.getElementById('pano'), {
+                    position: fenway,
+                    pov: {
+                      heading: 34,
+                      pitch: 10
+                    }
+                  });
+              map.setStreetView(panorama);
+
+            } 
+      }); 
+    }
+    </script>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="assets/js/ie10-viewport-bug-workaround.js"></script>
+    <script async defer
+        src="https://maps.googleapis.com/maps/api/js?callback=initialize">
+    </script>    
+  </body>
+</html>
